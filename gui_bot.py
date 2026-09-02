@@ -81,8 +81,10 @@ class CookieBotGUI(ctk.CTk):
         self.geometry('540x870')
         self.resizable(False, False)
 
-        self.is_running = False
-        self.bot_process = None
+        # Dictionary tracking processes and statuses per device
+        self.bot_processes = {}   # { "emulator-5554": Popen_object }
+        self.device_statuses = {} # { "emulator-5554": True/False }
+
         self.profile_data = self.load_profiles_file()
         self.current_profile_images = []
 
@@ -96,7 +98,7 @@ class CookieBotGUI(ctk.CTk):
 
         self.status_label = ctk.CTkLabel(
             self, 
-            text='Status: STOPPED', 
+            text='Status: STOPPED (Auto)', 
             font=ctk.CTkFont(size=13, weight='bold'),
             text_color='#FF5555'
         )
@@ -129,6 +131,7 @@ class CookieBotGUI(ctk.CTk):
         self.device_menu = ctk.CTkOptionMenu(
             self.device_frame, 
             values=device_options, 
+            command=self.on_select_device,
             width=180
         )
         self.device_menu.set(device_options[0])
@@ -346,6 +349,18 @@ class CookieBotGUI(ctk.CTk):
         # Apply active profile settings to UI
         self.apply_profile_to_switches(active_prof)
 
+    def on_select_device(self, selected_device):
+        """เมื่อสลับการเลือกในดรอปดาวน์ อัปเดตสถานะปุ่ม START/STOP ตามจอนั้นๆ"""
+        is_running = self.device_statuses.get(selected_device, False)
+        if is_running:
+            self.btn_start.configure(state='disabled')
+            self.btn_stop.configure(state='normal')
+            self.status_label.configure(text=f'Status: RUNNING ({selected_device})', text_color='#2FA572')
+        else:
+            self.btn_start.configure(state='normal')
+            self.btn_stop.configure(state='disabled')
+            self.status_label.configure(text=f'Status: STOPPED ({selected_device})', text_color='#FF5555')
+
     def refresh_adb_devices(self):
         """สแกนหาจอจำลอง ADB ที่กำลังเปิดอยู่และอัปเดตดรอปดาวน์"""
         devs = get_connected_adb_devices()
@@ -357,6 +372,7 @@ class CookieBotGUI(ctk.CTk):
         else:
             self.device_menu.set(opts[0])
 
+        self.on_select_device(self.device_menu.get())
         count_str = f"พบ {len(devs)} จอ" if devs else "ไม่พบจอที่เชื่อมต่อ"
         self.log_safe(f"📱 สแกนหาจอจำลองสำเร็จ: {count_str} {devs}")
 
@@ -627,17 +643,17 @@ class CookieBotGUI(ctk.CTk):
         self.log_box.see('end')
 
     def start_bot(self):
-        self.is_running = True
+        selected_device = self.device_menu.get()
+        if self.device_statuses.get(selected_device, False):
+            return
+
+        self.device_statuses[selected_device] = True
         self.btn_start.configure(state='disabled')
         self.btn_stop.configure(state='normal')
-        self.status_label.configure(text='Status: RUNNING', text_color='#2FA572')
-        
-        selected_device = self.device_menu.get()
-        if selected_device and selected_device != "Auto (จอแรก)":
-            self.log_safe(f"📱 เริ่มรันบอทบนจอ: {selected_device}")
-        else:
-            self.log_safe("📱 เริ่มรันบอทบนจอหลัก (Auto)")
+        self.status_label.configure(text=f'Status: RUNNING ({selected_device})', text_color='#2FA572')
 
+        dev_label = selected_device if selected_device != "Auto (จอแรก)" else "Auto (จอแรก)"
+        self.log_safe(f"📱 [START] เริ่มรันบอทบนจอ: {dev_label}")
         self.sync_config()
 
         env = os.environ.copy()
@@ -648,7 +664,7 @@ class CookieBotGUI(ctk.CTk):
         CREATE_NO_WINDOW = 0x08000000
         run_py_path = os.path.join(os.path.dirname(__file__), 'run.py')
         try:
-            self.bot_process = subprocess.Popen(
+            proc = subprocess.Popen(
                 [sys.executable, '-u', run_py_path],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -659,31 +675,36 @@ class CookieBotGUI(ctk.CTk):
                 cwd=os.path.dirname(__file__),
                 env=env
             )
-            threading.Thread(target=self.read_bot_logs, daemon=True).start()
+            self.bot_processes[selected_device] = proc
+            threading.Thread(target=self.read_bot_logs, args=(selected_device, proc), daemon=True).start()
         except Exception as e:
-            self.log_safe(f"Error starting run.py: {e}")
+            self.log_safe(f"Error starting run.py for {selected_device}: {e}")
 
-    def read_bot_logs(self):
-        if self.bot_process and self.bot_process.stdout:
-            for line in iter(self.bot_process.stdout.readline, ''):
+    def read_bot_logs(self, device_id, proc):
+        if proc and proc.stdout:
+            tag = f"[{device_id}] " if device_id != "Auto (จอแรก)" else ""
+            for line in iter(proc.stdout.readline, ''):
                 if line:
-                    self.after(0, self.log_safe, line.strip())
-            self.bot_process.stdout.close()
+                    self.after(0, self.log_safe, f"{tag}{line.strip()}")
+            proc.stdout.close()
 
     def stop_bot(self):
-        self.is_running = False
-        if hasattr(self, 'bot_process') and self.bot_process:
-            try:
-                self.bot_process.terminate()
-                self.bot_process.wait(timeout=1.0)
-            except Exception:
-                pass
-            self.bot_process = None
+        selected_device = self.device_menu.get()
+        if selected_device in self.bot_processes:
+            proc = self.bot_processes[selected_device]
+            if proc:
+                try:
+                    proc.terminate()
+                    proc.wait(timeout=1.0)
+                except Exception:
+                    pass
+            del self.bot_processes[selected_device]
 
+        self.device_statuses[selected_device] = False
         self.btn_start.configure(state='normal')
         self.btn_stop.configure(state='disabled')
-        self.status_label.configure(text='Status: STOPPED', text_color='#FF5555')
-        self.log_safe('Stopped run.py immediately.')
+        self.status_label.configure(text=f'Status: STOPPED ({selected_device})', text_color='#FF5555')
+        self.log_safe(f"📱 [STOP] หยุดรันบอทบนจอ: {selected_device} เรียบร้อยแล้ว")
 
 if __name__ == '__main__':
     app = CookieBotGUI()
