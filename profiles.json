@@ -1,0 +1,65 @@
+{
+    "active": "B-2/oxo",
+    "profiles": {
+        "B-6/xoo": {
+            "auto_captcha": true,
+            "auto_popup": true,
+            "use_fast_start": false,
+            "use_relay": false,
+            "buy_boost": true,
+            "jump_at_start": false,
+            "use_relay_quit": false,
+            "use_timer_quit": true,
+            "timer_sec": 185.0
+        },
+        "B-4/ooo": {
+            "auto_captcha": true,
+            "auto_popup": true,
+            "use_fast_start": false,
+            "use_relay": false,
+            "buy_boost": false,
+            "jump_at_start": false,
+            "use_relay_quit": false,
+            "use_timer_quit": true,
+            "timer_sec": 216.0
+        },
+        "B-3/xxo/17": {
+            "auto_captcha": true,
+            "auto_popup": true,
+            "use_fast_start": false,
+            "use_relay": false,
+            "buy_boost": true,
+            "jump_at_start": false,
+            "use_relay_quit": false,
+            "use_timer_quit": true,
+            "timer_sec": 168.0
+        },
+        "B-2/oxo": {
+            "images": [
+                "C:/Users/nongj/Pictures/Screenshots/Screenshot 2026-09-02 135711.png",
+                "C:/Users/nongj/Pictures/Screenshots/Screenshot 2026-09-02 135830.png",
+                "C:/Users/nongj/Pictures/Screenshots/Screenshot 2026-09-02 140408.png"
+            ],
+            "auto_captcha": true,
+            "auto_popup": true,
+            "use_fast_start": false,
+            "use_relay": false,
+            "buy_boost": true,
+            "jump_at_start": false,
+            "use_relay_quit": false,
+            "use_timer_quit": true,
+            "timer_sec": 129.0
+        },
+        "B-5/xoo": {
+            "auto_captcha": true,
+            "auto_popup": true,
+            "use_fast_start": false,
+            "use_relay": false,
+            "buy_boost": false,
+            "jump_at_start": false,
+            "use_relay_quit": false,
+            "use_timer_quit": true,
+            "timer_sec": 127.0
+        }
+    }
+}
