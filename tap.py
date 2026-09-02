@@ -2,6 +2,8 @@ import subprocess
 import time
 import random
 
+import os
+
 # กำหนดที่อยู่ของ adb.exe ในเครื่องคุณ
 ADB_PATH = r"C:\LDPlayer\LDPlayer14\adb.exe"
 
@@ -16,6 +18,10 @@ def tap(x, y, jitter=15):
     random_x = int(x + offset_x)
     random_y = int(y + offset_y)
     # 3. สั่งกดพิกัดที่สุ่มได้
-    cmd = f'"{ADB_PATH}" shell input tap {random_x} {random_y}'
+    device = os.environ.get("ADB_DEVICE")
+    if device:
+        cmd = f'"{ADB_PATH}" -s {device} shell input tap {random_x} {random_y}'
+    else:
+        cmd = f'"{ADB_PATH}" shell input tap {random_x} {random_y}'
     subprocess.run(cmd, shell=True, creationflags=0x08000000)
 

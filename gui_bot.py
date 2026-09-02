@@ -14,6 +14,7 @@ ctk.set_default_color_theme('blue')
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 PROFILES_FILE = os.path.join(os.path.dirname(__file__), 'profiles.json')
+ADB_PATH = r"C:\LDPlayer\LDPlayer14\adb.exe"
 
 DEFAULT_PROFILES = {
     "active": "Default Mode",
@@ -57,12 +58,27 @@ DEFAULT_PROFILES = {
     }
 }
 
+def get_connected_adb_devices():
+    """สแกนหาพอร์ต/รหัสจอจำลอง ADB ทั้งหมดที่กำลังเชื่อมต่ออยู่"""
+    devices = []
+    try:
+        cmd = f'"{ADB_PATH}" devices'
+        out = subprocess.check_output(cmd, shell=True, text=True, creationflags=0x08000000)
+        for line in out.splitlines():
+            line = line.strip()
+            if line and not line.startswith("List of") and "\tdevice" in line:
+                dev_id = line.split("\t")[0].strip()
+                devices.append(dev_id)
+    except Exception:
+        pass
+    return devices
+
 class CookieBotGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title('CookieRun AutoBot Control Panel')
-        self.geometry('540x840')
+        self.geometry('540x870')
         self.resizable(False, False)
 
         self.is_running = False
@@ -87,15 +103,46 @@ class CookieBotGUI(ctk.CTk):
         self.status_label.pack(pady=(0, 2))
 
         # Main Tabview (2 Pages)
-        self.tabview = ctk.CTkTabview(self, width=510, height=760)
+        self.tabview = ctk.CTkTabview(self, width=510, height=790)
         self.tabview.pack(padx=15, pady=(0, 10))
 
         self.tab_main   = self.tabview.add('🤖 บอท & การตั้งค่า')
         self.tab_images = self.tabview.add('🖼️ ภาพประกอบประจำเซ็ท')
 
         # ==========================================
-        # TAB 1: 🤖 บอท & การตั้งค่า (Controls + Switches + Log)
+        # TAB 1: 🤖 บอท & การตั้งค่า (Controls + Devices + Switches + Log)
         # ==========================================
+        # 📱 Device Selector Bar (สำหรับรันหลายจอ)
+        self.device_frame = ctk.CTkFrame(self.tab_main)
+        self.device_frame.pack(pady=4, padx=10, fill='x')
+
+        self.lbl_device = ctk.CTkLabel(
+            self.device_frame, 
+            text='📱 เลือกจอจำลอง:', 
+            font=ctk.CTkFont(size=13, weight='bold')
+        )
+        self.lbl_device.pack(side='left', padx=(10, 5), pady=6)
+
+        detected_devices = get_connected_adb_devices()
+        device_options = ["Auto (จอแรก)"] + detected_devices if detected_devices else ["Auto (จอแรก)"]
+
+        self.device_menu = ctk.CTkOptionMenu(
+            self.device_frame, 
+            values=device_options, 
+            width=180
+        )
+        self.device_menu.set(device_options[0])
+        self.device_menu.pack(side='left', padx=3, pady=6)
+
+        self.btn_refresh_dev = ctk.CTkButton(
+            self.device_frame, 
+            text='🔄 สแกนจอ', 
+            width=80, 
+            fg_color="#1F6AA5",
+            command=self.refresh_adb_devices
+        )
+        self.btn_refresh_dev.pack(side='right', padx=10, pady=6)
+
         # Start/Stop Buttons
         self.btn_frame = ctk.CTkFrame(self.tab_main)
         self.btn_frame.pack(pady=4, padx=10, fill='x')
@@ -251,7 +298,7 @@ class CookieBotGUI(ctk.CTk):
         self.entry_timer_sec.bind('<KeyRelease>', lambda e: self.sync_config())
 
         # Log Display Window
-        self.log_box = ctk.CTkTextbox(self.tab_main, width=475, height=180, font=ctk.CTkFont(size=12))
+        self.log_box = ctk.CTkTextbox(self.tab_main, width=475, height=170, font=ctk.CTkFont(size=12))
         self.log_box.pack(pady=6, padx=10)
 
         # Build Right-Click Context Menu for Log Box
@@ -290,7 +337,7 @@ class CookieBotGUI(ctk.CTk):
         )
         self.btn_add_img.pack(side='right', padx=10, pady=6)
 
-        # Scrollable Frame with Native Double-Buffered Image Labels (Zero Ghosting)
+        # Scrollable Frame with Native Double-Buffered Image Labels
         self.scrollable_img_frame = ctk.CTkScrollableFrame(self.tab_images, width=470, height=640)
         self.scrollable_img_frame.pack(pady=5, padx=10, fill='both', expand=True)
 
@@ -299,8 +346,21 @@ class CookieBotGUI(ctk.CTk):
         # Apply active profile settings to UI
         self.apply_profile_to_switches(active_prof)
 
+    def refresh_adb_devices(self):
+        """สแกนหาจอจำลอง ADB ที่กำลังเปิดอยู่และอัปเดตดรอปดาวน์"""
+        devs = get_connected_adb_devices()
+        opts = ["Auto (จอแรก)"] + devs if devs else ["Auto (จอแรก)"]
+        curr = self.device_menu.get()
+        self.device_menu.configure(values=opts)
+        if curr in opts:
+            self.device_menu.set(curr)
+        else:
+            self.device_menu.set(opts[0])
+
+        count_str = f"พบ {len(devs)} จอ" if devs else "ไม่พบจอที่เชื่อมต่อ"
+        self.log_safe(f"📱 สแกนหาจอจำลองสำเร็จ: {count_str} {devs}")
+
     def add_images_to_profile(self):
-        """เปิด Dialog เลือกรูปภาพได้ไม่จำกัดจำนวน และเพิ่มเข้าเซ็ทปัจจุบัน"""
         file_paths = filedialog.askopenfilenames(
             title="เลือกรูปภาพประกอบประจำเซ็ท (เลือกได้หลายรูป)",
             filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.webp"), ("All Files", "*.*")]
@@ -321,7 +381,6 @@ class CookieBotGUI(ctk.CTk):
             self.log_safe(f"🖼️ เพิ่มรูปภาพจำนวน {added_count} รูปเข้าเซ็ท '{active}' เรียบร้อยแล้ว")
 
     def remove_image_at_index(self, idx):
-        """ลบรูปภาพตามลำดับ Index ออกจากเซ็ท"""
         if 0 <= idx < len(self.current_profile_images):
             removed_path = self.current_profile_images.pop(idx)
             active = self.profile_menu.get()
@@ -333,7 +392,6 @@ class CookieBotGUI(ctk.CTk):
             self.log_safe(f"🗑️ ลบรูปภาพ '{os.path.basename(removed_path)}' ออกจากเซ็ทเรียบร้อยแล้ว")
 
     def update_image_previews(self):
-        """เรนเดอร์ภาพแบบ Native tk.Label + ImageTk.PhotoImage ลื่นไหล 100% ไร้ภาพค้างติดตา"""
         for child in self.scrollable_img_frame.winfo_children():
             child.destroy()
 
@@ -351,7 +409,6 @@ class CookieBotGUI(ctk.CTk):
             card = ctk.CTkFrame(self.scrollable_img_frame)
             card.pack(pady=6, padx=6, fill='x')
 
-            # Top header of card
             card_top = ctk.CTkFrame(card, fg_color="transparent")
             card_top.pack(fill='x', padx=8, pady=(6, 2))
 
@@ -374,7 +431,6 @@ class CookieBotGUI(ctk.CTk):
             )
             btn_del.pack(side='right')
 
-            # Native tk.Label image rendering for 60fps smooth scrolling without ghosting
             if img_path and os.path.exists(img_path):
                 try:
                     pil_img = Image.open(img_path)
@@ -388,7 +444,7 @@ class CookieBotGUI(ctk.CTk):
                     photo = ImageTk.PhotoImage(resized_img)
 
                     img_lbl = tk.Label(card, image=photo, bg='#2B2B2B', bd=0, highlightthickness=0)
-                    img_lbl.image = photo  # Prevent garbage collection
+                    img_lbl.image = photo
                     img_lbl.pack(pady=(2, 8), padx=8)
                 except Exception:
                     err_lbl = ctk.CTkLabel(card, text=f"⚠️ ไม่สามารถเปิดรูปภาพนี้ได้ (ไฟล์อาจถูกลบหรือย้าย)", text_color="#FF5555")
@@ -439,7 +495,6 @@ class CookieBotGUI(ctk.CTk):
         self.entry_timer_sec.delete(0, 'end')
         self.entry_timer_sec.insert(0, sec_val)
 
-        # Load images list for this profile
         self.current_profile_images = prof.get('images', [])
         self.update_image_previews()
 
@@ -576,11 +631,19 @@ class CookieBotGUI(ctk.CTk):
         self.btn_start.configure(state='disabled')
         self.btn_stop.configure(state='normal')
         self.status_label.configure(text='Status: RUNNING', text_color='#2FA572')
-        self.log_safe('Started run.py subprocess...')
+        
+        selected_device = self.device_menu.get()
+        if selected_device and selected_device != "Auto (จอแรก)":
+            self.log_safe(f"📱 เริ่มรันบอทบนจอ: {selected_device}")
+        else:
+            self.log_safe("📱 เริ่มรันบอทบนจอหลัก (Auto)")
+
         self.sync_config()
 
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "utf-8"
+        if selected_device and selected_device != "Auto (จอแรก)":
+            env["ADB_DEVICE"] = selected_device
 
         CREATE_NO_WINDOW = 0x08000000
         run_py_path = os.path.join(os.path.dirname(__file__), 'run.py')

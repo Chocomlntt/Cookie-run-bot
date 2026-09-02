@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import subprocess
 
+import os
+
 ADB_PATH = r"C:\LDPlayer\LDPlayer14\adb.exe"
 
 def click_event(event, x, y, flags, param):
@@ -17,7 +19,11 @@ def click_event(event, x, y, flags, param):
 
 def main():
     print("📸 กำลังถ่ายภาพหน้าจอสด...")
-    cmd = f'"{ADB_PATH}" shell screencap -p'
+    device = os.environ.get("ADB_DEVICE")
+    if device:
+        cmd = f'"{ADB_PATH}" -s {device} shell screencap -p'
+    else:
+        cmd = f'"{ADB_PATH}" shell screencap -p'
     pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, creationflags=0x08000000)
     image_bytes = pipe.stdout.read().replace(b'\r\n', b'\n')
     nparr = np.frombuffer(image_bytes, np.uint8)
