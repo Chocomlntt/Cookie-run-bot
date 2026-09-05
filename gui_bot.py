@@ -97,7 +97,7 @@ class CookieBotGUI(ctk.CTk):
         super().__init__()
 
         self.title('CookieRun AutoBot Control Panel')
-        self.geometry('540x890')
+        self.geometry('540x930')
         self.resizable(False, False)
 
         # Dictionary tracking processes and statuses per device
@@ -114,7 +114,7 @@ class CookieBotGUI(ctk.CTk):
             text='CookieRun AutoBot', 
             font=ctk.CTkFont(size=22, weight='bold')
         )
-        self.title_label.pack(pady=(10, 0))
+        self.title_label.pack(pady=(8, 0))
 
         self.status_label = ctk.CTkLabel(
             self, 
@@ -124,35 +124,35 @@ class CookieBotGUI(ctk.CTk):
         )
         self.status_label.pack(pady=(0, 2))
 
-        # 🔄 Round Counter Display Label (Persistent during GUI session)
+        # 🔄 Round Counter Display Label
         self.lbl_rounds = ctk.CTkLabel(
             self, 
             text='🔄 จำนวนรอบวิ่งสะสม: 0 รอบ', 
-            font=ctk.CTkFont(size=14, weight='bold'),
+            font=ctk.CTkFont(size=13, weight='bold'),
             text_color='#3B82F6'
         )
-        self.lbl_rounds.pack(pady=(0, 4))
+        self.lbl_rounds.pack(pady=(0, 2))
 
         # Main Tabview (2 Pages)
-        self.tabview = ctk.CTkTabview(self, width=510, height=770)
+        self.tabview = ctk.CTkTabview(self, width=510, height=810)
         self.tabview.pack(padx=15, pady=(0, 10))
 
         self.tab_main   = self.tabview.add('🤖 บอท & การตั้งค่า')
         self.tab_images = self.tabview.add('🖼️ ภาพประกอบประจำเซ็ท')
 
         # ==========================================
-        # TAB 1: 🤖 บอท & การตั้งค่า (Controls + Devices + Switches + Log)
+        # TAB 1: 🤖 บอท & การตั้งค่า (Controls + Devices + Tools + Switches + Log)
         # ==========================================
         # 📱 Device Selector Bar (สำหรับรันหลายจอ)
         self.device_frame = ctk.CTkFrame(self.tab_main)
-        self.device_frame.pack(pady=4, padx=10, fill='x')
+        self.device_frame.pack(pady=3, padx=10, fill='x')
 
         self.lbl_device = ctk.CTkLabel(
             self.device_frame, 
             text='📱 เลือกจอจำลอง:', 
-            font=ctk.CTkFont(size=13, weight='bold')
+            font=ctk.CTkFont(size=12, weight='bold')
         )
-        self.lbl_device.pack(side='left', padx=(10, 5), pady=6)
+        self.lbl_device.pack(side='left', padx=(10, 5), pady=4)
 
         detected_devices = get_connected_adb_devices()
         device_options = ["Auto (จอแรก)"] + detected_devices if detected_devices else ["Auto (จอแรก)"]
@@ -161,23 +161,68 @@ class CookieBotGUI(ctk.CTk):
             self.device_frame, 
             values=device_options, 
             command=self.on_select_device,
-            width=180
+            width=170
         )
         self.device_menu.set(device_options[0])
-        self.device_menu.pack(side='left', padx=3, pady=6)
+        self.device_menu.pack(side='left', padx=3, pady=4)
 
         self.btn_refresh_dev = ctk.CTkButton(
             self.device_frame, 
             text='🔄 สแกนจอ', 
-            width=80, 
+            width=75, 
             fg_color="#1F6AA5",
             command=self.refresh_adb_devices
         )
-        self.btn_refresh_dev.pack(side='right', padx=10, pady=6)
+        self.btn_refresh_dev.pack(side='right', padx=10, pady=4)
+
+        # 🛠️ Helper Tools Frame (click_point, get_region, crop_button)
+        self.tools_frame = ctk.CTkFrame(self.tab_main)
+        self.tools_frame.pack(pady=3, padx=10, fill='x')
+
+        self.lbl_tools = ctk.CTkLabel(
+            self.tools_frame, 
+            text='🛠️ เครื่องมือช่วยวัดพิกัด & ครอปรูปภาพ:', 
+            font=ctk.CTkFont(size=12, weight='bold')
+        )
+        self.lbl_tools.pack(anchor='w', padx=10, pady=(4, 2))
+
+        self.tools_btn_subframe = ctk.CTkFrame(self.tools_frame, fg_color="transparent")
+        self.tools_btn_subframe.pack(pady=(0, 4), padx=5, fill='x')
+
+        self.btn_click_point = ctk.CTkButton(
+            self.tools_btn_subframe,
+            text='🎯 ดูพิกัด',
+            font=ctk.CTkFont(size=11, weight='bold'),
+            width=140,
+            fg_color='#1F6AA5',
+            command=self.run_click_point_tool
+        )
+        self.btn_click_point.pack(side='left', expand=True, padx=2)
+
+        self.btn_get_region = ctk.CTkButton(
+            self.tools_btn_subframe,
+            text='📐 วัดโซน',
+            font=ctk.CTkFont(size=11, weight='bold'),
+            width=140,
+            fg_color='#1F6AA5',
+            command=self.run_get_region_tool
+        )
+        self.btn_get_region.pack(side='left', expand=True, padx=2)
+
+        self.btn_crop_button = ctk.CTkButton(
+            self.tools_btn_subframe,
+            text='✂️ ครอปรูป',
+            font=ctk.CTkFont(size=11, weight='bold'),
+            width=145,
+            fg_color='#D97706',
+            hover_color='#B45309',
+            command=self.run_crop_button_tool
+        )
+        self.btn_crop_button.pack(side='left', expand=True, padx=2)
 
         # Start/Stop Buttons
         self.btn_frame = ctk.CTkFrame(self.tab_main)
-        self.btn_frame.pack(pady=4, padx=10, fill='x')
+        self.btn_frame.pack(pady=3, padx=10, fill='x')
 
         self.btn_start = ctk.CTkButton(
             self.btn_frame, 
@@ -187,7 +232,7 @@ class CookieBotGUI(ctk.CTk):
             font=ctk.CTkFont(size=14, weight='bold'),
             command=self.start_bot
         )
-        self.btn_start.pack(side='left', expand=True, padx=8, pady=6)
+        self.btn_start.pack(side='left', expand=True, padx=8, pady=5)
 
         self.btn_stop = ctk.CTkButton(
             self.btn_frame, 
@@ -198,18 +243,18 @@ class CookieBotGUI(ctk.CTk):
             state='disabled',
             command=self.stop_bot
         )
-        self.btn_stop.pack(side='right', expand=True, padx=8, pady=6)
+        self.btn_stop.pack(side='right', expand=True, padx=8, pady=5)
 
         # Profile Selection Bar
         self.profile_frame = ctk.CTkFrame(self.tab_main)
-        self.profile_frame.pack(pady=4, padx=10, fill='x')
+        self.profile_frame.pack(pady=3, padx=10, fill='x')
 
         self.lbl_profile = ctk.CTkLabel(
             self.profile_frame, 
             text='📁 เซ็ท:', 
-            font=ctk.CTkFont(size=13, weight='bold')
+            font=ctk.CTkFont(size=12, weight='bold')
         )
-        self.lbl_profile.pack(side='left', padx=(10, 3), pady=5)
+        self.lbl_profile.pack(side='left', padx=(10, 3), pady=4)
 
         profile_names = list(self.profile_data['profiles'].keys())
         active_prof = self.profile_data.get('active', profile_names[0])
@@ -223,7 +268,7 @@ class CookieBotGUI(ctk.CTk):
             width=160
         )
         self.profile_menu.set(active_prof)
-        self.profile_menu.pack(side='left', padx=3, pady=5)
+        self.profile_menu.pack(side='left', padx=3, pady=4)
 
         self.btn_save_prof = ctk.CTkButton(
             self.profile_frame, 
@@ -231,7 +276,7 @@ class CookieBotGUI(ctk.CTk):
             width=50, 
             command=self.save_active_profile
         )
-        self.btn_save_prof.pack(side='left', padx=2, pady=5)
+        self.btn_save_prof.pack(side='left', padx=2, pady=4)
 
         self.btn_add_prof = ctk.CTkButton(
             self.profile_frame, 
@@ -239,7 +284,7 @@ class CookieBotGUI(ctk.CTk):
             width=65, 
             command=self.add_new_profile
         )
-        self.btn_add_prof.pack(side='left', padx=2, pady=5)
+        self.btn_add_prof.pack(side='left', padx=2, pady=4)
 
         self.btn_del_prof = ctk.CTkButton(
             self.profile_frame, 
@@ -249,18 +294,18 @@ class CookieBotGUI(ctk.CTk):
             hover_color='#9A0007',
             command=self.delete_active_profile
         )
-        self.btn_del_prof.pack(side='left', padx=2, pady=5)
+        self.btn_del_prof.pack(side='left', padx=2, pady=4)
 
         # Switches Option Frame
         self.option_frame = ctk.CTkFrame(self.tab_main)
-        self.option_frame.pack(pady=4, padx=10, fill='x')
+        self.option_frame.pack(pady=3, padx=10, fill='x')
 
         self.opt_title = ctk.CTkLabel(
             self.option_frame, 
             text='⚙️ สวิตช์ตั้งค่าบอท (8 สวิตช์):', 
-            font=ctk.CTkFont(size=13, weight='bold')
+            font=ctk.CTkFont(size=12, weight='bold')
         )
-        self.opt_title.pack(anchor='w', padx=15, pady=(6, 2))
+        self.opt_title.pack(anchor='w', padx=15, pady=(4, 2))
 
         # Switch 1: Captcha
         self.switch_captcha = ctk.CTkSwitch(
@@ -313,7 +358,7 @@ class CookieBotGUI(ctk.CTk):
 
         # Switch 8: Timer Quit Frame
         self.timer_frame = ctk.CTkFrame(self.option_frame, fg_color="transparent")
-        self.timer_frame.pack(anchor='w', padx=20, pady=(2, 6), fill='x')
+        self.timer_frame.pack(anchor='w', padx=20, pady=(2, 4), fill='x')
 
         self.switch_timer_quit = ctk.CTkSwitch(
             self.timer_frame, text='⏱️ use_timer_quit (จับเวลาแล้วออก)', 
@@ -330,8 +375,8 @@ class CookieBotGUI(ctk.CTk):
         self.entry_timer_sec.bind('<KeyRelease>', lambda e: self.sync_config())
 
         # Log Display Window
-        self.log_box = ctk.CTkTextbox(self.tab_main, width=475, height=170, font=ctk.CTkFont(size=12))
-        self.log_box.pack(pady=6, padx=10)
+        self.log_box = ctk.CTkTextbox(self.tab_main, width=475, height=150, font=ctk.CTkFont(size=12))
+        self.log_box.pack(pady=4, padx=10)
 
         # Build Right-Click Context Menu for Log Box
         self.context_menu = tk.Menu(self, tearoff=0, bg="#2B2B2B", fg="white", activebackground="#1F6AA5", activeforeground="white")
@@ -370,7 +415,7 @@ class CookieBotGUI(ctk.CTk):
         self.btn_add_img.pack(side='right', padx=10, pady=6)
 
         # Scrollable Frame with Native Double-Buffered Image Labels
-        self.scrollable_img_frame = ctk.CTkScrollableFrame(self.tab_images, width=470, height=640)
+        self.scrollable_img_frame = ctk.CTkScrollableFrame(self.tab_images, width=470, height=660)
         self.scrollable_img_frame.pack(pady=5, padx=10, fill='both', expand=True)
 
         self.log_safe('Welcome to CookieRun AutoBot GUI!')
@@ -378,13 +423,90 @@ class CookieBotGUI(ctk.CTk):
         # Apply active profile settings to UI
         self.apply_profile_to_switches(active_prof)
 
+    def run_click_point_tool(self):
+        """รันเครื่องมือดูพิกัด click_point.py"""
+        selected_device = self.device_menu.get()
+        self.log_safe(f"🎯 [TOOL] กำลังเปิดเครื่องมือดูพิกัด (click_point) บนจอ: {selected_device}...")
+
+        def _task():
+            env = os.environ.copy()
+            if selected_device and selected_device != "Auto (จอแรก)":
+                env["ADB_DEVICE"] = selected_device
+            proc = subprocess.Popen(
+                [sys.executable, "click_point.py"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                cwd=os.path.dirname(__file__),
+                env=env
+            )
+            if proc and proc.stdout:
+                for line in iter(proc.stdout.readline, ''):
+                    if line:
+                        self.after(0, self.log_safe, line.strip())
+                proc.stdout.close()
+
+        threading.Thread(target=_task, daemon=True).start()
+
+    def run_get_region_tool(self):
+        """รันเครื่องมือวัดโซน get_region.py"""
+        selected_device = self.device_menu.get()
+        self.log_safe(f"📐 [TOOL] กำลังเปิดเครื่องมือวัดโซน (get_region) บนจอ: {selected_device}...")
+
+        def _task():
+            env = os.environ.copy()
+            if selected_device and selected_device != "Auto (จอแรก)":
+                env["ADB_DEVICE"] = selected_device
+            proc = subprocess.Popen(
+                [sys.executable, "get_region.py"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                cwd=os.path.dirname(__file__),
+                env=env
+            )
+            if proc and proc.stdout:
+                for line in iter(proc.stdout.readline, ''):
+                    if line:
+                        self.after(0, self.log_safe, line.strip())
+                proc.stdout.close()
+
+        threading.Thread(target=_task, daemon=True).start()
+
+    def run_crop_button_tool(self):
+        """ถามชื่อไฟล์รูปภาพก่อนรันเครื่องมือครอปรูปภาพ crop_button.py"""
+        dialog = ctk.CTkInputDialog(text="กรอกชื่อไฟล์รูปภาพที่จะตั้ง (เช่น play_new.png):", title="✂️ ครอปรูปภาพ (crop_button)")
+        filename = dialog.get_input()
+        if not filename or not filename.strip():
+            self.log_safe("⚠️ ยกเลิกการครอปรูปภาพ (ไม่ได้กรอกชื่อไฟล์)")
+            return
+
+        filename = filename.strip()
+        if not filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            filename += ".png"
+
+        selected_device = self.device_menu.get()
+        self.log_safe(f"✂️ [TOOL] กำลังเปิดเครื่องมือครอปรูปภาพ '{filename}' บนจอ: {selected_device}...")
+
+        def _task():
+            import crop_button
+            if selected_device and selected_device != "Auto (จอแรก)":
+                os.environ["ADB_DEVICE"] = selected_device
+            save_path = crop_button.crop_with_mouse(filename)
+            if save_path:
+                self.after(0, self.log_safe, f"✅ [TOOL] บันทึกรูปภาพ '{save_path}' เรียบร้อยแล้ว!")
+
+        threading.Thread(target=_task, daemon=True).start()
+
     def increment_round_counter(self):
-        """เพิ่มจำนวนรอบสะสม และอัปเดตป้ายแสดงผลบน GUI"""
         self.total_rounds += 1
         self.lbl_rounds.configure(text=f"🔄 จำนวนรอบวิ่งสะสม: {self.total_rounds} รอบ")
 
     def on_select_device(self, selected_device):
-        """เมื่อสลับการเลือกในดรอปดาวน์ อัปเดตสถานะปุ่ม START/STOP ตามจอนั้นๆ"""
         is_running = self.device_statuses.get(selected_device, False)
         if is_running:
             self.btn_start.configure(state='disabled')
@@ -396,7 +518,6 @@ class CookieBotGUI(ctk.CTk):
             self.status_label.configure(text=f'Status: STOPPED ({selected_device})', text_color='#FF5555')
 
     def refresh_adb_devices(self):
-        """สแกนหาจอจำลอง ADB ที่กำลังเปิดอยู่และอัปเดตดรอปดาวน์"""
         devs = get_connected_adb_devices()
         opts = ["Auto (จอแรก)"] + devs if devs else ["Auto (จอแรก)"]
         curr = self.device_menu.get()
