@@ -430,10 +430,11 @@ class CookieBotGUI(ctk.CTk):
 
         def _task():
             env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
             if selected_device and selected_device != "Auto (จอแรก)":
                 env["ADB_DEVICE"] = selected_device
             proc = subprocess.Popen(
-                [sys.executable, "click_point.py"],
+                [sys.executable, "-u", "click_point.py"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -457,10 +458,11 @@ class CookieBotGUI(ctk.CTk):
 
         def _task():
             env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
             if selected_device and selected_device != "Auto (จอแรก)":
                 env["ADB_DEVICE"] = selected_device
             proc = subprocess.Popen(
-                [sys.executable, "get_region.py"],
+                [sys.executable, "-u", "get_region.py"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

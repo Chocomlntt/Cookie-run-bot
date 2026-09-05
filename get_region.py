@@ -2,6 +2,10 @@ import cv2
 import numpy as np
 import subprocess
 import os
+import sys
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 def find_adb_path():
     local_adb = os.path.join(os.path.dirname(__file__), "adb_tools", "adb.exe")
