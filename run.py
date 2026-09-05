@@ -72,6 +72,7 @@ def main():
         lobby_pos, _   = find_button(frame, "templates/lobby.png", threshold=0.80)
         result_pos, _    = find_button(frame, "templates/result.png", threshold=0.80)
         shop_pos, _ = find_button(frame, "templates/shop.png", threshold=0.80)
+        mystery_pos, _ = find_button(frame, "templates/mystery_box.png", threshold=0.80)
 
         if still >= 10:
             print("⚠️ ค้างหน้าเดิมนานเกินไป -> สั่งรีเซ็ตให้กดปุ่มซ้ำอีกครั้ง!")
@@ -152,11 +153,26 @@ def main():
                 last_state = state
                 print("find_ok_button()")
                 find_ok_button()
-                time.sleep(0.5)
-                has_box = find_open_all_button()
-                if has_box:
-                    time.sleep(1.0)
-                    find_confirm_blue_button()
+                time.sleep(1.0)
+                loop = loop + 1
+                print(f"[{time.strftime('%H:%M:%S')}] รอบที่ {loop} ")
+            else:
+                still = still + 1
+                continue
+        #-------------------------------------------------------------
+
+
+
+        #mystery box
+        #-------------------------------------------------------------
+        elif mystery_pos:
+            state = "MYSTERY BOX (หน้ากล่องสุ่ม)"
+            if state != last_state:
+                print(f"[{time.strftime('%H:%M:%S')}] 📍 สแกนเจอ MYSTERY BOX -> กำลังกด OPEN ALL...")
+                last_state = state
+                find_open_all_button()
+                time.sleep(1.0)
+                find_confirm_blue_button()
                 time.sleep(5.0)
                 loop = loop + 1
                 print(f"[{time.strftime('%H:%M:%S')}] รอบที่ {loop} ")
@@ -164,6 +180,7 @@ def main():
                 still = still + 1
                 continue
         #-------------------------------------------------------------
+        
 
         else:
             if check_and_dismiss_x_popup(frame):
