@@ -14,6 +14,7 @@ ctk.set_default_color_theme('blue')
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 PROFILES_FILE = os.path.join(os.path.dirname(__file__), 'profiles.json')
+
 def find_adb_path():
     local_adb = os.path.join(os.path.dirname(__file__), "adb_tools", "adb.exe")
     if os.path.exists(local_adb):
@@ -79,7 +80,8 @@ def get_connected_adb_devices():
     """สแกนหาพอร์ต/รหัสจอจำลอง ADB ทั้งหมดที่กำลังเชื่อมต่ออยู่"""
     devices = []
     try:
-        cmd = f'"{ADB_PATH}" devices'
+        adb_bin = find_adb_path()
+        cmd = f'"{adb_bin}" devices'
         out = subprocess.check_output(cmd, shell=True, text=True, creationflags=0x08000000)
         for line in out.splitlines():
             line = line.strip()
@@ -95,12 +97,13 @@ class CookieBotGUI(ctk.CTk):
         super().__init__()
 
         self.title('CookieRun AutoBot Control Panel')
-        self.geometry('540x870')
+        self.geometry('540x890')
         self.resizable(False, False)
 
         # Dictionary tracking processes and statuses per device
         self.bot_processes = {}   # { "emulator-5554": Popen_object }
         self.device_statuses = {} # { "emulator-5554": True/False }
+        self.total_rounds = 0     # Counter persistent across Start/Stop, resets on GUI app exit
 
         self.profile_data = self.load_profiles_file()
         self.current_profile_images = []
@@ -121,8 +124,17 @@ class CookieBotGUI(ctk.CTk):
         )
         self.status_label.pack(pady=(0, 2))
 
+        # 🔄 Round Counter Display Label (Persistent during GUI session)
+        self.lbl_rounds = ctk.CTkLabel(
+            self, 
+            text='🔄 จำนวนรอบวิ่งสะสม: 0 รอบ', 
+            font=ctk.CTkFont(size=14, weight='bold'),
+            text_color='#3B82F6'
+        )
+        self.lbl_rounds.pack(pady=(0, 4))
+
         # Main Tabview (2 Pages)
-        self.tabview = ctk.CTkTabview(self, width=510, height=790)
+        self.tabview = ctk.CTkTabview(self, width=510, height=770)
         self.tabview.pack(padx=15, pady=(0, 10))
 
         self.tab_main   = self.tabview.add('🤖 บอท & การตั้งค่า')
@@ -365,6 +377,11 @@ class CookieBotGUI(ctk.CTk):
 
         # Apply active profile settings to UI
         self.apply_profile_to_switches(active_prof)
+
+    def increment_round_counter(self):
+        """เพิ่มจำนวนรอบสะสม และอัปเดตป้ายแสดงผลบน GUI"""
+        self.total_rounds += 1
+        self.lbl_rounds.configure(text=f"🔄 จำนวนรอบวิ่งสะสม: {self.total_rounds} รอบ")
 
     def on_select_device(self, selected_device):
         """เมื่อสลับการเลือกในดรอปดาวน์ อัปเดตสถานะปุ่ม START/STOP ตามจอนั้นๆ"""
@@ -702,7 +719,10 @@ class CookieBotGUI(ctk.CTk):
             tag = f"[{device_id}] " if device_id != "Auto (จอแรก)" else ""
             for line in iter(proc.stdout.readline, ''):
                 if line:
-                    self.after(0, self.log_safe, f"{tag}{line.strip()}")
+                    stripped = line.strip()
+                    self.after(0, self.log_safe, f"{tag}{stripped}")
+                    if "🎉 จบรอบวิ่งเรียบร้อยแล้ว" in stripped:
+                        self.after(0, self.increment_round_counter)
             proc.stdout.close()
 
     def stop_bot(self):

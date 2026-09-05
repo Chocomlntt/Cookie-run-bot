@@ -135,8 +135,10 @@ def main():
                         sec = 19.0
                     print(f"[{time.strftime('%H:%M:%S')}] ⏱️ ตั้งเวลา {sec} วินาทีแล้วกดออก...")
                     timer_quit(sec)
+                    print(f"[{time.strftime('%H:%M:%S')}] 🎉 จบรอบวิ่งเรียบร้อยแล้ว")
                 elif config.get("use_relay_quit"):
                     find_reley_button_and_quit()
+                    print(f"[{time.strftime('%H:%M:%S')}] 🎉 จบรอบวิ่งเรียบร้อยแล้ว")
             else:
                 still = still + 1
                 continue
@@ -155,7 +157,7 @@ def main():
                 find_ok_button()
                 time.sleep(1.0)
                 loop = loop + 1
-                print(f"[{time.strftime('%H:%M:%S')}] รอบที่ {loop} ")
+                print(f"[{time.strftime('%H:%M:%S')}] 🎉 จบรอบวิ่งเรียบร้อยแล้ว (รอบที่ {loop})")
             else:
                 still = still + 1
                 continue
