@@ -1,13 +1,20 @@
 @echo off
-chcp 65001 > nul
-title CookieRun AutoBot Launcher & Auto-Updater
+title CookieRun AutoBot Launcher
+cls
 echo ==================================================
-echo 🔄 กำลังตรวจสอบและดึงอัปเดตโค้ดล่าสุดจาก GitHub...
+echo   CookieRun AutoBot Launcher ^& Auto-Updater
 echo ==================================================
+echo.
+echo [1/3] Updating latest code from GitHub...
 git pull
 echo.
-echo 📦 กำลังตรวจสอบและติดตั้งไลบรารีที่จำเป็นอัตโนมัติ...
-pip install customtkinter opencv-python pillow numpy
+echo [2/3] Installing required Python libraries...
+python -m pip install customtkinter opencv-python pillow numpy
 echo.
-echo ✅ พร้อมใช้งาน! กำลังเปิดโปรแกรม...
+echo [3/3] Starting CookieRun AutoBot GUI...
 python gui_bot.py
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo Error launching gui_bot.py!
+    pause
+)
