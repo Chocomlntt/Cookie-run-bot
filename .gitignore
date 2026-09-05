@@ -3,6 +3,11 @@ __pycache__/
 *.pyc
 *.pyo
 
+# PyInstaller Build Artifacts
+build/
+dist/
+*.spec
+
 # Virtual Environments
 venv/
 .venv/

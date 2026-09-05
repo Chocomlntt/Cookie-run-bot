@@ -14,7 +14,24 @@ ctk.set_default_color_theme('blue')
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 PROFILES_FILE = os.path.join(os.path.dirname(__file__), 'profiles.json')
-ADB_PATH = r"C:\LDPlayer\LDPlayer14\adb.exe"
+def find_adb_path():
+    local_adb = os.path.join(os.path.dirname(__file__), "adb_tools", "adb.exe")
+    if os.path.exists(local_adb):
+        return local_adb
+    candidates = [
+        r"C:\LDPlayer\LDPlayer14\adb.exe",
+        r"C:\LDPlayer\LDPlayer9\adb.exe",
+        r"C:\LDPlayer\LDPlayer4.0\adb.exe",
+        r"D:\LDPlayer\LDPlayer14\adb.exe",
+        r"D:\LDPlayer\LDPlayer9\adb.exe",
+        r"E:\LDPlayer\LDPlayer14\adb.exe",
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    return "adb"
+
+ADB_PATH = find_adb_path()
 
 DEFAULT_PROFILES = {
     "active": "Default Mode",
